@@ -1,0 +1,263 @@
+'use client';
+import Image from 'next/image';
+import { Box, Button } from '@mui/material';
+import React, { ReactElement, useState } from 'react';
+
+import Dashboard from '../../dashboard/browse';
+import Stepper from '../../components/stepper/stepper';
+
+import Modal from '../../components/modals';
+import StepsControl from '../components/steps-control';
+import { FlexWrapper } from '../../styles/layout.styles';
+import { CustomizableText } from '../../styles/text.styles';
+import { NUMBERS, TRADE_MOCK_DATA, TRADE_STATUS } from '../../utils/constants';
+
+import Summary from '../../components/summary';
+import StepOne from '../components/steps/step-one';
+import StepTwo from '../components/steps/step-two';
+import StepThree from '../components/steps/step-three';
+import { SummaryItem } from '../../components/summary/summary.styles';
+
+import {
+  TradeDetailsWrapper,
+  TradeStartedWrapper,
+  TradeStartedHeaderWrapper,
+  TradeStartedContentWrapper,
+  TradeStartedStepperWrapper
+} from '../components/trade-details.styles';
+
+import {
+  ModalButtonWrapper,
+  ModalContentWrapper,
+  ModalHeaderWrapper
+} from '../../components/modals/modals.styles';
+
+import Timer from '../components/timer';
+
+interface TradeDetailsProps {
+  params: { id: string };
+}
+
+const TradeDetails = ({ params }: TradeDetailsProps): ReactElement => {
+  const tradeData = TRADE_MOCK_DATA.filter((trade) => {
+    return params.id == trade._id;
+  });
+
+  const [activeStep, setActiveStep] = useState<number>(NUMBERS.ONE);
+
+  const [completeStep, setCompleteStep] = useState<number>(NUMBERS.ZERO);
+
+  const Steps = [
+    'Buyer Pays into Doiyo Escrow',
+    'Buyer confirms FX is received',
+    'Doiyo’s received fund'
+  ];
+
+  const { name, amount, status, paymentMethod } = tradeData[0];
+
+  const [openModal, setOpenModal] = useState<boolean>(() => status === 'Pending');
+
+  const [openModalTwo, setOpenModalTwo] = useState<boolean>(false);
+
+  const handleModalClose = (): void => setOpenModal((prev) => !prev);
+
+  const handleModalTwoClose = (): void => setOpenModalTwo((prev) => !prev);
+
+  const handleStepIncrease = (): void => {
+    setActiveStep((prev) => (prev !== NUMBERS.THREE ? prev + NUMBERS.ONE : prev));
+
+    setCompleteStep((prev) => (prev !== NUMBERS.TWO ? prev + NUMBERS.ONE : prev));
+  };
+
+  const handleSecondModalClose = (): void => {
+    handleModalTwoClose();
+    handleStepIncrease();
+  };
+
+  const handleStepsChange = (): void => {
+    console.log(activeStep);
+    if (activeStep !== NUMBERS.TWO) {
+      handleStepIncrease();
+    } else if (activeStep === NUMBERS.TWO) {
+      handleModalTwoClose();
+    }
+  };
+
+  return (
+    <Dashboard isSidebarHidden>
+      <TradeDetailsWrapper>
+        {status === TRADE_STATUS.PENDING && (
+          <Modal width="418px" items="center" open={openModal} direction={'column'}>
+            <ModalHeaderWrapper>
+              <Image src={'/modalIcon2.svg'} alt="" width={258.811} height={193.765} />
+            </ModalHeaderWrapper>
+
+            <ModalContentWrapper $items="center">
+              <CustomizableText $size="20px" $text="center" $color="#000759" $weight="700">
+                You have a trade request
+              </CustomizableText>
+
+              <CustomizableText $size="14px" $text="center" $color="#666" $weight="500">
+                Hello petron,{' '}
+                <CustomizableText $color="#000759" $weight="700">
+                  @Boman
+                </CustomizableText>{' '}
+                wants to buy $5,000 worth ₦2,300,000 in escrow which should be release to your
+                account after you make payment.
+              </CustomizableText>
+
+              <Timer time="23:03" />
+            </ModalContentWrapper>
+
+            <ModalButtonWrapper>
+              <Button
+                variant="contained"
+                sx={{ textTransform: 'capitalize', background: '#F10909' }}
+                fullWidth>
+                Decline Trade
+              </Button>
+
+              <Button
+                variant="contained"
+                sx={{ textTransform: 'capitalize' }}
+                onClick={handleModalClose}
+                fullWidth>
+                Accept Trade
+              </Button>
+            </ModalButtonWrapper>
+          </Modal>
+        )}
+
+        {openModalTwo && (
+          <Modal width="fit-content" items="center" open={openModalTwo} direction="row">
+            <ModalHeaderWrapper>
+              <Image src={'/cautionIcon.svg'} alt="" width={20} height={20} />
+            </ModalHeaderWrapper>
+
+            <ModalContentWrapper>
+              <CustomizableText $size="20px" $text="center" $color="#000759" $weight="600">
+                Payment Confirmation
+              </CustomizableText>
+
+              <CustomizableText $size="14px" $color="#666" $weight="500">
+                Make sure you have made payment to the specified method of payment and have a valid
+                proof of payment before clicking confirm
+              </CustomizableText>
+
+              <FlexWrapper
+                $desktop={{ $direction: 'row', $justify: 'space-between', $spaceX: '120px' }}
+                $mobile={{ $direction: 'column' }}>
+                <Timer time="23:03" />
+
+                <ModalButtonWrapper $width="fit-content">
+                  <Button
+                    variant="outlined"
+                    onClick={handleModalTwoClose}
+                    sx={{ textTransform: 'capitalize' }}>
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    sx={{ textTransform: 'capitalize' }}
+                    onClick={handleSecondModalClose}>
+                    Confirm
+                  </Button>
+                </ModalButtonWrapper>
+              </FlexWrapper>
+            </ModalContentWrapper>
+          </Modal>
+        )}
+
+        <TradeStartedWrapper>
+          <TradeStartedHeaderWrapper>
+            <CustomizableText $size="27px" $weight="700" $color="#000759">
+              Trade Started
+            </CustomizableText>
+
+            <CustomizableText $color="#444" $size="16px" $weight="400">
+              You are the seller. Please follow the steps listed below to competed this trade.
+            </CustomizableText>
+          </TradeStartedHeaderWrapper>
+
+          <TradeStartedContentWrapper>
+            <CustomizableText $color="#000759" $size="20px" $weight="700">
+              Trade Information
+            </CustomizableText>
+
+            <TradeStartedStepperWrapper>
+              <Stepper steps={Steps} activeStep={activeStep} completedStep={completeStep} />
+
+              <Box sx={{ width: '100%' }}>
+                {activeStep === NUMBERS.ONE ? (
+                  <StepOne />
+                ) : activeStep === NUMBERS.TWO ? (
+                  <StepTwo amount={amount} paymentMethod={paymentMethod} name={name} />
+                ) : (
+                  <StepThree main={amount.main} name={name} />
+                )}
+              </Box>
+
+              <StepsControl activeStep={activeStep} handleStepsChange={handleStepsChange} />
+            </TradeStartedStepperWrapper>
+          </TradeStartedContentWrapper>
+        </TradeStartedWrapper>
+
+        <Summary summaryTitle="Trade Details">
+          <SummaryItem>
+            <CustomizableText $color="#666" $size="14px" $weight="400">
+              Type
+            </CustomizableText>
+            <CustomizableText $color="#2A2A2A" $size="12px" $weight="600">
+              Buy FX
+            </CustomizableText>
+          </SummaryItem>
+
+          <SummaryItem>
+            <CustomizableText $color="#3C366B" $size="14px" $weight="700">
+              You are Seller
+            </CustomizableText>
+
+            <FlexWrapper $desktop={{ $direction: 'column', $spaceY: '10px' }}>
+              <CustomizableText $text="right" $color="#000" $size="14px" $weight="700">
+                ${amount.main}
+              </CustomizableText>
+              <CustomizableText $text="right" $color="#6B7280" $size="14px" $weight="500">
+                $1 ~ ₦1,234
+              </CustomizableText>
+            </FlexWrapper>
+          </SummaryItem>
+
+          <SummaryItem>
+            <CustomizableText $color="#3C366B" $size="14px" $weight="700">
+              You will Receive
+            </CustomizableText>
+            <CustomizableText $color="#1A202C" $size="14px" $weight="700">
+              ₦{amount.total}
+            </CustomizableText>
+          </SummaryItem>
+
+          <SummaryItem>
+            <CustomizableText $color="#3C366B" $size="14px" $weight="700">
+              Via
+            </CustomizableText>
+            <CustomizableText $color="#1A202C" $size="14px" $weight="600">
+              Doiyo
+            </CustomizableText>
+          </SummaryItem>
+
+          <SummaryItem>
+            <CustomizableText $color="#6B7280" $size="14px" $weight="400">
+              *fee
+            </CustomizableText>
+            <CustomizableText $color="#1A202C" $size="14px" $weight="600">
+              N2,300
+            </CustomizableText>
+          </SummaryItem>
+        </Summary>
+      </TradeDetailsWrapper>
+    </Dashboard>
+  );
+};
+
+export default TradeDetails;
